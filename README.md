@@ -1,1 +1,1 @@
-# agentIAgno
+Estudo de Agno para aplicação em projeto profissional.
