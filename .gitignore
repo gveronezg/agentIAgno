@@ -2,3 +2,7 @@
 \dados
 \.env
 __pycache__/
+\tmp
+
+doc.pdf
+copy.py
