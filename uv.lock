@@ -8,10 +8,12 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "agno" },
+    { name = "aiofiles" },
     { name = "chromadb" },
     { name = "fastapi" },
     { name = "groq" },
     { name = "openai" },
+    { name = "pgvector" },
     { name = "pypdf" },
     { name = "python-dotenv" },
     { name = "sqlalchemy" },
@@ -23,10 +25,12 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "agno", specifier = ">=1.8.1" },
+    { name = "aiofiles", specifier = ">=24.1.0" },
     { name = "chromadb", specifier = ">=1.0.20" },
     { name = "fastapi", specifier = ">=0.116.1" },
     { name = "groq", specifier = ">=0.31.0" },
     { name = "openai", specifier = ">=1.104.2" },
+    { name = "pgvector", specifier = ">=0.4.1" },
     { name = "pypdf", specifier = ">=6.0.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "sqlalchemy", specifier = ">=2.0.43" },
@@ -57,6 +61,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/4a/fc/8e815919fde2104c56091632a39b1b5db4b3ffe01c4b192f57d0252b9a7b/agno-1.8.1.tar.gz", hash = "sha256:ef134860987f7bd3397e028b32ce90e51e0920dc8265e886e76a55651a6384ce", size = 754435, upload-time = "2025-08-27T16:27:51.777Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0d/2c/88321406cf5218475859e6f04d1485771d30b02668537890117d12b1f89f/agno-1.8.1-py3-none-any.whl", hash = "sha256:1c16c2cec2b930a6fd8a15859a57da8f497223f041ce87a11b9a29b1b61f35e5", size = 996593, upload-time = "2025-08-27T16:27:49.612Z" },
+]
+
+[[package]]
+name = "aiofiles"
+version = "24.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0b/03/a88171e277e8caa88a4c77808c20ebb04ba74cc4681bf1e9416c862de237/aiofiles-24.1.0.tar.gz", hash = "sha256:22a075c9e5a3810f0c2e48f3008c94d68c65d763b9b03857924c99e57355166c", size = 30247, upload-time = "2024-06-24T11:02:03.584Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a5/45/30bb92d442636f570cb5651bc661f52b610e2eec3f891a5dc3a4c3667db0/aiofiles-24.1.0-py3-none-any.whl", hash = "sha256:b4ec55f4195e3eb5d7abd1bf7e061763e864dd4954231fb8539a0ef8bb8260e5", size = 15896, upload-time = "2024-06-24T11:02:01.529Z" },
 ]
 
 [[package]]
@@ -1111,6 +1124,18 @@ name = "peewee"
 version = "3.18.2"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/04/89/76f6f1b744c8608e0d416b588b9d63c2a500ff800065ae610f7c80f532d6/peewee-3.18.2.tar.gz", hash = "sha256:77a54263eb61aff2ea72f63d2eeb91b140c25c1884148e28e4c0f7c4f64996a0", size = 949220, upload-time = "2025-07-08T12:52:03.941Z" }
+
+[[package]]
+name = "pgvector"
+version = "0.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/44/43/9a0fb552ab4fd980680c2037962e331820f67585df740bedc4a2b50faf20/pgvector-0.4.1.tar.gz", hash = "sha256:83d3a1c044ff0c2f1e95d13dfb625beb0b65506cfec0941bfe81fd0ad44f4003", size = 30646, upload-time = "2025-04-26T18:56:37.151Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bf/21/b5735d5982892c878ff3d01bb06e018c43fc204428361ee9fc25a1b2125c/pgvector-0.4.1-py3-none-any.whl", hash = "sha256:34bb4e99e1b13d08a2fe82dda9f860f15ddcd0166fbb25bffe15821cbfeb7362", size = 27086, upload-time = "2025-04-26T18:56:35.956Z" },
+]
 
 [[package]]
 name = "platformdirs"
