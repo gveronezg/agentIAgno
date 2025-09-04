@@ -17,7 +17,6 @@ db_path = os.path.join(os.getcwd(), "tmp", "chromadb") # Gera o caminho absoluto
 vector_db = ChromaDb(
     collection="pdf_agent",
     path=db_path,   # Local físico onde o Chroma armazenará os arquivos (SQLite + índices).
-    persist=True  # Garante que os arquivos SQLite + índices sejam criados em disco
 )
 
 # --- Configuração da Knowledge Base ---
