@@ -1,0 +1,15 @@
+A IA cruzará informações para identificar os seguintes indícios:
+
+Trocas com mais saídas que entradas
+Produtos que aparecem simultaneamente em ajustes e trocas
+Baixo percentual de vendas à vista (dinheiro) comparado à média
+Percentuais de trocas e cancelamentos acima do padrão
+Produtos com movimentações suspeitas em curto intervalo (ex: ajuste e troca no mesmo dia)
+Clientes e produtos reincidentes em trocas ou divergências
+
+IDEAIS
+
+1.Agente que chama outro Agente
+2.IA rodando sem parar analisando e reanalisando e auditor responsavel por inputir novos parametros e validar relatórios
+3.Usar as tegs construidas pelos multAgentes para sintetizar informações importantes para o futuro
+4.Temes de Diversos agentes especialistas em funções especificas ** CREWai **

@@ -53,4 +53,4 @@ app = Playground(agents=[agent]).get_app() # Cria a aplicação web que permite 
 if __name__ == "__main__": # Garante que esse bloco só execute quando o script for chamado diretamente (não quando importado).
     # --- Carregar a base logo na importação ---
     knowledge.load() # Carrega o PDF e popula o banco vetorial (ChromaDB)
-    serve_playground_app("21_pdf_agent:app") # Inicia o servidor web (Uvicorn) e aponta para o app FastAPI criado acima.
+    serve_playground_app("22_csv_agent:app") # Inicia o servidor web (Uvicorn) e aponta para o app FastAPI criado acima.
