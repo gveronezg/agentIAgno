@@ -1,6 +1,6 @@
 from importENV import *  # Importa variáveis de ambiente, tokens e chaves
 import os
-import duckdb
+import duckdb # Banco de dados relacional usado para armazenar os dados em formato de tabelas (CSV, Parquet, etc.)
 #######################
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
@@ -8,7 +8,7 @@ from agno.storage.sqlite import SqliteStorage
 from agno.playground import Playground, serve_playground_app
 from agno.tools import tool
 #######################
-from agno.vectordb.chroma import ChromaDb
+from agno.vectordb.chroma import ChromaDb # Banco vetorial (ChromaDB) usado para armazenar os dados em formato de vetores (embeddings) para busca semântica.
 
 # --- Garantir diretórios ---
 os.makedirs("tmp/chromadb", exist_ok=True)
@@ -61,7 +61,7 @@ agent = Agent(
     model=OpenAIChat(id="gpt-5-nano"),
     storage=db,
     tools=[run_query],  # adiciona a ferramenta SQL
-    knowledge=None,     # removemos CSVKnowledgeBase
+    knowledge=None,     # CSVKnowledgeBase removido
     add_history_to_messages=True,
     num_history_runs=3,
     debug_mode=True,
