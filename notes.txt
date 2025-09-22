@@ -11,5 +11,15 @@ IDEAIS
 
 1.Agente que chama outro Agente
 2.IA rodando sem parar analisando e reanalisando e auditor responsavel por inputir novos parametros e validar relatórios
-3.Usar as tegs construidas pelos multAgentes para sintetizar informações importantes para o futuro
-4.Temes de Diversos agentes especialistas em funções especificas ** CREWai **
+3.Usar as tags construidas pelos multAgentes para sintetizar informações importantes para o futuro
+4.Temas de Diversos agentes especialistas em funções especificas ** CREWai **
+
+
+
+22/09/25
+
+.modificações realizadas!
+.tentativa frustrada de vetorizar.
+.necessidade de limpar o codigo!
+.verificar quais arquivos dados estão sendo usados ou não.
+.aplicar uma busca de fraude e analisar velocidade e acertividade.
