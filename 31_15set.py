@@ -21,24 +21,51 @@ vector_db = ChromaDb(
     path=db_path
 )
 
+import os, glob
+import duckdb
+from pathlib import Path
+
 # --- Configuração do DuckDB ---
 duckdb_path = os.path.join("tmp", "datawarehouse.duckdb")
 con = duckdb.connect(duckdb_path)
 
-# Carregar tabelas (aqui CSV → mas em produção ideal é Parquet)
-con.execute("CREATE OR REPLACE TABLE saidas AS SELECT * FROM read_csv_auto('dados/saidas/*.csv')")
-con.execute("CREATE OR REPLACE TABLE devolucoes AS SELECT * FROM read_csv_auto('dados/devolucoes/*.csv')")
-con.execute("CREATE OR REPLACE TABLE ajustes AS SELECT * FROM read_csv_auto('dados/ajustes/*.csv')")
+# --- Função utilitária para converter CSVs para Parquet ---
+def csv_para_parquet(src_folder, dest_folder, encoding=None):
+    os.makedirs(dest_folder, exist_ok=True)
+    
+    for arquivo in glob.glob(os.path.join(src_folder, "*.csv")):
+        arquivo_path = Path(arquivo).resolve().as_posix()
+        base = Path(arquivo).stem + ".parquet"
+        destino = Path(dest_folder).resolve() / base
 
-# Arquivos ISO-8859-1 - cancelar, ler com pandas e importar para duckdb
-import glob
-import pandas as pd
-caminhos_cancelamentos = glob.glob('dados/cancelamentos/*.csv')
-df_cancelamentos = pd.concat(
-    [pd.read_csv(arquivo, encoding='ISO-8859-1', sep=';') for arquivo in caminhos_cancelamentos],
-    ignore_index=True
-)
-con.execute("CREATE OR REPLACE TABLE cancelamentos AS SELECT * FROM df_cancelamentos")
+        if encoding:
+            con.execute(f"""
+                CREATE OR REPLACE TEMPORARY TABLE tmp_csv AS
+                SELECT * FROM read_csv_auto('{arquivo_path}', header=True, encoding='{encoding}');
+            """)
+        else:
+            con.execute(f"""
+                CREATE OR REPLACE TEMPORARY TABLE tmp_csv AS
+                SELECT * FROM read_csv_auto('{arquivo_path}', header=True);
+            """)
+
+        con.execute(f"""
+            COPY tmp_csv TO '{destino.as_posix()}' (FORMAT PARQUET);
+        """)
+
+# --- Converter CSVs principais para Parquet ---
+csv_para_parquet("dados/saidas", "tmp/parquet/saidas")
+csv_para_parquet("dados/devolucoes", "tmp/parquet/devolucoes")
+csv_para_parquet("dados/ajustes", "tmp/parquet/ajustes")
+
+# --- Cancelamentos ISO-8859-1 para Parquet ---
+csv_para_parquet("dados/cancelamentos", "tmp/parquet/cancelamentos", encoding="CP1252")
+
+# --- Criar tabelas DuckDB a partir dos arquivos Parquet ---
+con.execute("CREATE OR REPLACE TABLE saidas AS SELECT * FROM 'tmp/parquet/saidas/*.parquet'")
+con.execute("CREATE OR REPLACE TABLE devolucoes AS SELECT * FROM 'tmp/parquet/devolucoes/*.parquet'")
+con.execute("CREATE OR REPLACE TABLE ajustes AS SELECT * FROM 'tmp/parquet/ajustes/*.parquet'")
+con.execute("CREATE OR REPLACE TABLE cancelamentos AS SELECT * FROM 'tmp/parquet/cancelamentos/*.parquet'")
 
 # --- Tool para consultas SQL ---
 @tool
