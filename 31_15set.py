@@ -1,6 +1,6 @@
 from importENV import *  # Importa variáveis de ambiente, tokens e chaves
-import os
-import duckdb # Banco de dados relacional usado para armazenar os dados em formato de tabelas (CSV, Parquet, etc.)
+import os, glob, duckdb # Banco de dados relacional usado para armazenar os dados em formato de tabelas (CSV, Parquet, etc.)
+from pathlib import Path
 #######################
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
@@ -20,10 +20,6 @@ vector_db = ChromaDb(
     collection="csv_agent",
     path=db_path
 )
-
-import os, glob
-import duckdb
-from pathlib import Path
 
 # --- Configuração do DuckDB ---
 duckdb_path = os.path.join("tmp", "datawarehouse.duckdb")

@@ -1,0 +1,165 @@
+Principais colunas de cada tabela (descrição rápida)
+
+ajustes
+LOJA: loja/filial
+DATA: data da movimentação
+SKU: código do produto
+QTD_ANTIGA: quantidade existente antes do ajuste
+QTDE_AJUSTE: quantidade após o ajuste (ou ajuste efetuado)
+TIPO_AJUSTE: tipo do ajuste (ex.: erro, quebras, ajuste de auditoria, etc.)
+
+cancelamentos
+LOJA: loja
+DATACANCELAMENTO: data do cancelamento
+IDUSUARIOCANCELAMENTO: usuário que realizou o cancelamento
+IDORCAMENTO: ID do orçamento/pedido cancelado
+VALORBRUTO: valor bruto relacionado (em texto, aparentemente)
+SKU: código do produto
+IDCONDICAOPAGAMENTO: condição de pagamento associada
+CONFIRMADO_CANCELADO: indicação de confirmação de cancelamento
+ATIVO_CANCELADO: status ativo do cancelamento
+
+devolucoes
+VALORVENDAPRODUTO: valor da venda do produto (em texto)
+VALORDEVPRODUTO: valor devolvido/valor devolvido ao cliente (em texto)
+LOJA: loja
+DATA_DEVOLUCAO: data da devolução
+IDUSUARIO: usuário relacionado
+ID_DEVOLUCAO: identificador da devolução
+IDORCAMENTO_NOVO: referência ao novo orçamento/pedido após devolução
+DIFERENCA_VALOR: diferença de valor entre venda e devolução
+SKU: código do produto
+TIPOMOVIMENTACAO: tipo de movimentação (ex.: devolução de venda, troca, etc.)
+
+saidas
+LOJA: loja
+DATA: data da saída
+COMPLEMENTO: complemento (pode ser código adicional, não está claro)
+SKU: código do produto
+QTDEMOVIMENTADA: quantidade movimentada (saída)
+VALOR: valor associado à saída (em texto)
+
+Observações rápidas sobre qualidade dos dados
+
+Alguns campos de valor/valor de dinheiro aparecem como VARCHAR (texto), o que sugere que, para análise numérica, você deverá fazer casts para numeric/decimal antes de somar ou comparar.
+
+As colunas parecem bem compatíveis para análises de movimentação: todas associadas a loja, SKU e data, o que facilita cruzar as tabelas para entender o fluxo de produtos.
+
+Sugestões de análises iniciais (passos práticos)
+
+Movimentação total por SKU em um período
+Ex.: somar QTDEMOVIMENTADA em saidas por SKU entre duas datas.
+Ajustes de estoque por SKU (delta de estoque)
+Ex.: delta = QTDE_AJUSTE - QTD_ANTIGA por SKU e data; identificar maiores variações.
+Cancelamentos por mês e por loja
+Ex.: contagem de registros de cancelamento por mês/loja e somar VALORBRUTO (após tratar o VARCHAR para numérico).
+Devoluções vs vendas
+Ex.: comparar VALORVENDAPRODUTO vs VALORDEVPRODUTO por SKU/loja; identificar discrepâncias.
+Visão consolidada de movimento
+Criar uma view consolidada que junte ajustes, saidas, devoluções e cancelamentos por SKU, LOJA e período, para analisar o fluxo líquido de cada produto.
+
+--------------------------
+
+Concordo: tratar/normalizar os dados antes da ingestão facilita bastante a análise e traz respostas mais rápidas e confiáveis.
+Por que é melhor tratar antes
+Evita CASTs repetidos em cada consulta, reduzindo complexidade e tempo de resposta.
+Garantia de consistência: valores monetários passam a ser numéricos (DECIMAL), o que permite somas, médias, margens e joins sem surpresas.
+Validação mais fácil: constraints e checks podem prevenir dados inválidos (ex.: valores não numéricos em campos monetários).
+Filtragem e agregação se tornam mais diretas (booleans e datas podem ser padronizados).
+Melhor aproveitamento de memória e performance, especialmente em análises grandes.
+Como poderia ficar (opções práticas)
+Opção A (migração/ingestão, recomendado para análises recorrentes):
+Converter colunas monetárias para numéricas (DECIMAL(18,2)):
+cancelamentos: VALORBRUTO
+devolucoes: VALORVENDAPRODUTO, VALORDEVPRODUTO, DIFERENCA_VALOR
+saidas: VALOR
+Converter campos booleanos (se usados como tal) para BOOLEAN (ou manter com códigos padronizados).
+Garantir datas como DATE ou TIMESTAMP (se precisar de hora, usar TIMESTAMP).
+Benefícios: consultas muito mais fáceis e rápidas, menos erros de parsing.
+Opção B (sem alterar o schema agora):
+Criar views de leitura que já exponham os valores numéricos:
+Ex.: SELECT ..., CAST(VALORBRUTO AS DECIMAL(18,2)) AS VALORBRUTO_NUM FROM cancelamentos;
+Todas as análises continuam funcionando, mas cada query precisa do CAST, o que ainda é mais lento que ter o dado já como NUMERIC.
+Observação sobre dados hoje:
+Monetário: VALORBRUTO, VALORVENDAPRODUTO, VALORDEVPRODUTO, DIFERENCA_VALOR e VALOR são VARCHAR. Demoram para calcular e podem ter formatos variados.
+Outros campos estão OK, mas pense em normalizar LOJA (FK para uma tabela de lojas) e talvez adicionar uma PK/ID único por movimento.
+Próximos passos sugeridos
+Se quiser velocidade e consistência a longo prazo, recomendo a opção A (migração de tipos).
+Exemplos de comandos (DuckDB) para alterar tipos de colunas monetárias:
+ALTER TABLE cancelamentos ALTER COLUMN VALORBRUTO TYPE DECIMAL(18,2) USING CAST(VALORBRUTO AS DECIMAL(18,2));
+ALTER TABLE devolucoes ALTER COLUMN VALORVENDAPRODUTO TYPE DECIMAL(18,2) USING CAST(VALORVENDAPRODUTO AS DECIMAL(18,2));
+ALTER TABLE devolucoes ALTER COLUMN VALORDEVPRODUTO TYPE DECIMAL(18,2) USING CAST(VALORDEVPRODUTO AS DECIMAL(18,2));
+ALTER TABLE devolucoes ALTER COLUMN DIFERENCA_VALOR TYPE DECIMAL(18,2) USING CAST(DIFERENCA_VALOR AS DECIMAL(18,2));
+ALTER TABLE saidas ALTER COLUMN VALOR TYPE DECIMAL(18,2) USING CAST(VALOR AS DECIMAL(18,2));
+Antes de rodar, valide que todos os valores atuais são numéricos (ou trate valores não numéricos).
+Se houver restrição de downtime, comece com a Opção B (views de leitura) para não interromper operações, e planeje a migração gradual para o schema.
+Quer que eu gere um conjunto de scripts (opção A ou B) para você executar? Posso também criar views consolidando movimentos (ajustes, cancelamentos, devoluções, saídas) com valores numéricos prontos para análise. Diga qual caminho prefere e quais colunas você quer priorizar.
+
+----------------------------------
+
+20 segundos
+
+Tempo de resposta estimado: aproximadamente 2 a 3 segundos.
+Aqui estão os 20 primeiros SKUs onde as saidas são maiores que as entradas (conforme a sua consulta atual). Incluo as colunas: SKU, saidas_total, entradas_total e diff (saidas - entradas).
+SKU: 999999992539626 | saidas_total: 999377.0 | entradas_total: 138.0 | diff: 999239.0
+SKU: 999999992573238 | saidas_total: 157.0 | entradas_total: 0.0 | diff: 157.0
+SKU: 999999992305836 | saidas_total: 118.0 | entradas_total: 0.0 | diff: 118.0
+SKU: 999999992420972 | saidas_total: 67.0 | entradas_total: 1.0 | diff: 66.0
+SKU: 999999992564691 | saidas_total: 66.0 | entradas_total: 7.0 | diff: 59.0
+SKU: 999999992098248 | saidas_total: 44.0 | entradas_total: 2.0 | diff: 42.0
+SKU: 999999992564690 | saidas_total: 58.0 | entradas_total: 17.0 | diff: 41.0
+SKU: 999999992575489 | saidas_total: 36.0 | entradas_total: 0.0 | diff: 36.0
+SKU: 999999991998239 | saidas_total: 40.0 | entradas_total: 6.0 | diff: 34.0
+SKU: 999999992072103 | saidas_total: 36.0 | entradas_total: 2.0 | diff: 34.0
+SKU: 999999992575490 | saidas_total: 34.0 | entradas_total: 1.0 | diff: 33.0
+SKU: 999999992564692 | saidas_total: 43.0 | entradas_total: 10.0 | diff: 33.0
+SKU: 999999991087268 | saidas_total: 36.0 | entradas_total: 4.0 | diff: 32.0
+SKU: 999999992320461 | saidas_total: 30.0 | entradas_total: 0.0 | diff: 30.0
+SKU: 999999992320311 | saidas_total: 30.0 | entradas_total: 0.0 | diff: 30.0
+SKU: 999999991501895 | saidas_total: 36.0 | entradas_total: 7.0 | diff: 29.0
+SKU: 999999992564689 | saidas_total: 41.0 | entradas_total: 14.0 | diff: 27.0
+SKU: 999999992484103 | saidas_total: 33.0 | entradas_total: 7.0 | diff: 26.0
+SKU: 999999992444059 | saidas_total: 30.0 | entradas_total: 4.0 | diff: 26.0
+SKU: 999999991504736 | saidas_total: 35.0 | entradas_total: 9.0 | diff: 26.0
+Observações rápidas
+O SKU 999999992539626 aparece com uma diferença muito grande (saídas altas vs entradas baixas). Pode ser que esse SKU tenha saídas registradas que não possuem correspondência clara de entradas na sua base (ou entradas muito menores).
+Como a métrica de “entradas” foi calculada a partir de ajustes onde QTDE_AJUSTE > QTD_ANTIGA, alguns SKUs podem mostrar entradas pequenas mesmo que haja grandes saídas. Se desejar, posso recalcular com outra definição de entradas (por exemplo, somar apenas QTD_AJUSTE positivos diretamente, ou usar entradas reais de estoque em uma data-hora específica).
+Se quiser, posso:
+Refazer a cálculo com uma definição diferente de entradas (para confirmar a consistência).
+Limitar o intervalo de datas para as entradas/saídas, ou separar por loja.
+Gerar a lista completa (não apenas 20) ou exportar para CSV.
+
+-------------------------------------
+
+33 segundos
+
+Tempo de resposta estimado: aproximadamente 2 a 4 segundos.
+Top SKUs que se destacam por desvio em relação às médias padrão (com trocas e cancelamentos), usando o índice composite_z (maior desvio => mais destaque):
+SKU: 999999992573222 | trocas_vol: 3090.0 | cancel_vol: 0 | z_trocas: 204.61 | z_cancel: -0.34 | composite_z: 102.47
+SKU: 504726450002502 | trocas_vol: 52.0 | cancel_vol: 824 | z_trocas: 3.35 | z_cancel: 151.80 | composite_z: 77.57
+SKU: 999999991801935 | trocas_vol: 123.0 | cancel_vol: 279 | z_trocas: 8.05 | z_cancel: 51.17 | composite_z: 29.61
+SKU: 999999991893069 | trocas_vol: 115.0 | cancel_vol: 237 | z_trocas: 7.52 | z_cancel: 43.42 | composite_z: 25.47
+SKU: 999999992542277 | trocas_vol: 710.0 | cancel_vol: 0 | z_trocas: 46.94 | z_cancel: -0.34 | composite_z: 23.64
+SKU: 999999991801932 | trocas_vol: 196.0 | cancel_vol: 164 | z_trocas: 12.89 | z_cancel: 29.94 | composite_z: 21.41
+SKU: 999999992497216 | trocas_vol: 614.0 | cancel_vol: 4 | z_trocas: 40.58 | z_cancel: 0.40 | composite_z: 20.49
+SKU: 999999992541528 | trocas_vol: 590.0 | cancel_vol: 0 | z_trocas: 38.99 | z_cancel: -0.34 | composite_z: 19.66
+SKU: 999999991801933 | trocas_vol: 86.0 | cancel_vol: 173 | z_trocas: 5.60 | z_cancel: 31.60 | composite_z: 18.60
+SKU: 999999992025113 | trocas_vol: 135.0 | cancel_vol: 151 | z_trocas: 8.85 | z_cancel: 27.54 | composite_z: 18.19
+SKU: 999999992663593 | trocas_vol: 432.0 | cancel_vol: 35 | z_trocas: 28.52 | z_cancel: 6.12 | composite_z: 17.32
+SKU: 999999992025114 | trocas_vol: 83.0 | cancel_vol: 159 | z_trocas: 5.40 | z_cancel: 29.02 | composite_z: 17.21
+SKU: 999999992652141 | trocas_vol: 484.0 | cancel_vol: 13 | z_trocas: 31.97 | z_cancel: 2.06 | composite_z: 17.01
+SKU: 999999992590505 | trocas_vol: 485.0 | cancel_vol: 7 | z_trocas: 32.03 | z_cancel: 0.95 | composite_z: 16.49
+SKU: 999999991955876 | trocas_vol: 2.0 | cancel_vol: 177 | z_trocas: 0.03 | z_cancel: 32.34 | composite_z: 16.19
+SKU: 999999992440611 | trocas_vol: 409.0 | cancel_vol: 20 | z_trocas: 27.00 | z_cancel: 3.35 | composite_z: 15.17
+SKU: 999999992420972 | trocas_vol: 59.0 | cancel_vol: 127 | z_trocas: 3.81 | z_cancel: 23.11 | composite_z: 13.46
+SKU: 999999992626818 | trocas_vol: 402.0 | cancel_vol: 0 | z_trocas: 26.53 | z_cancel: -0.34 | composite_z: 13.44
+SKU: 999999992288830 | trocas_vol: 247.0 | cancel_vol: 55 | z_trocas: 16.27 | z_cancel: 9.81 | composite_z: 13.04
+SKU: 999999992320463 | trocas_vol: 54.0 | cancel_vol: 124 | z_trocas: 3.48 | z_cancel: 22.55 | composite_z: 13.02
+Observações rápidas:
+SKUs com trocas muito acima da média (e cancelamentos baixos) tendem a soar como outliers de volume de trocas, exemplo 999999992573222 com trocas extremamente altas e nenhum cancelamento registrado.
+Skus com cancelamentos muito acima da média aparecem nas posições onde z_cancel é alto (ex.: 504726450002502), puxando o composite_z para níveis elevados mesmo com trocas modestas.
+O índice composite_z ajuda a indicar desvio relativo combinado entre trocas e cancelamentos; para entender causas, vale investigar data/loja, tipo de ajuste, e se há registros duplicados ou inconsistências de captura.
+Deseja:
+Ver a lista completa além dos 20 primeiros?
+Refinar por data ou loja para entender contextos específicos?
+Obter um conjunto de comandos para traçar esses outliers (por exemplo, listar todas as entradas de trocas do SKU 999999992573222 para analisar datas e notas)?
