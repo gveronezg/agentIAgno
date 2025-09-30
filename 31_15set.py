@@ -1,25 +1,15 @@
 from importENV import *  # Importa variáveis de ambiente, tokens e chaves
 import os, glob, duckdb # Banco de dados relacional usado para armazenar os dados em formato de tabelas (CSV, Parquet, etc.)
 from pathlib import Path
-#######################
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.storage.sqlite import SqliteStorage
 from agno.playground import Playground, serve_playground_app
 from agno.tools import tool
-#######################
 from agno.vectordb.chroma import ChromaDb # Banco vetorial (ChromaDB) usado para armazenar os dados em formato de vetores (embeddings) para busca semântica.
 
 # --- Garantir diretórios ---
-os.makedirs("tmp/chromadb", exist_ok=True)
 os.makedirs("tmp", exist_ok=True)
-
-# --- Configuração do Chroma local (VectorDB) ---
-db_path = os.path.join(os.getcwd(), "tmp", "chromadb")
-vector_db = ChromaDb(
-    collection="csv_agent",
-    path=db_path
-)
 
 # --- Configuração do DuckDB ---
 duckdb_path = os.path.join("tmp", "datawarehouse.duckdb")
@@ -50,12 +40,10 @@ def csv_para_parquet(src_folder, dest_folder, encoding=None):
         """)
 
 # --- Converter CSVs principais para Parquet ---
-csv_para_parquet("dados/saidas", "tmp/parquet/saidas")
-csv_para_parquet("dados/devolucoes", "tmp/parquet/devolucoes")
-csv_para_parquet("dados/ajustes", "tmp/parquet/ajustes")
-
-# --- Cancelamentos ISO-8859-1 para Parquet ---
-csv_para_parquet("dados/cancelamentos", "tmp/parquet/cancelamentos", encoding="CP1252")
+csv_para_parquet("dados/tratados/ajustes", "tmp/parquet/ajustes")
+csv_para_parquet("dados/tratados/saidas", "tmp/parquet/saidas")
+csv_para_parquet("dados/tratados/devolucoes", "tmp/parquet/devolucoes")
+csv_para_parquet("dados/tratados/cancelamentos", "tmp/parquet/cancelamentos")
 
 # --- Criar tabelas DuckDB a partir dos arquivos Parquet ---
 con.execute("CREATE OR REPLACE TABLE saidas AS SELECT * FROM 'tmp/parquet/saidas/*.parquet'")
